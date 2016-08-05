@@ -61,6 +61,15 @@ export type DOMEvent = {
   target: DOMNode,
 };
 
+export type DOMRect = {
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+  width: number,
+  height: number,
+};
+
 export type ControlState = {
   enabled: boolean,
 } & Record;

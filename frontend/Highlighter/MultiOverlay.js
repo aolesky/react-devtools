@@ -10,8 +10,13 @@
  */
 'use strict';
 
+
+var {EventEmitter} = require('events');
+
 var assign = require('object-assign');
-import type {DOMNode} from '../types';
+import type {DOMNode, DOMRect} from '../types';
+
+const ACCURACY_LEVEL = 5;
 
 class MultiOverlay {
   win: Object;
@@ -30,6 +35,13 @@ class MultiOverlay {
     this._currentNodes = nodes;
     this.container.innerHTML = '';
 
+    var locations: Map<DOMRect, number> = new Map();
+
+    var virtualScreen = new Array(Math.floor(window.innerHeight/ACCURACY_LEVEL));
+    for (var i = 0; i < window.innerHeight/ACCURACY_LEVEL; i++) {
+      virtualScreen[i] = new Array(Math.floor(window.innerWidth/ACCURACY_LEVEL));
+    }
+
     nodes.forEach(node => {
       var div = this.win.document.createElement('div');
       if (typeof node.getBoundingClientRect !== 'function') {
@@ -39,6 +51,7 @@ class MultiOverlay {
       if (box.bottom < 0 || box.top > window.innerHeight) {
         return;
       }
+
       assign(div.style, {
         top: box.top + 'px',
         left: box.left + 'px',
@@ -52,7 +65,47 @@ class MultiOverlay {
         pointerEvents: 'none',
       });
       this.container.appendChild(div);
+
+      //calcs
+      var startBox = [Math.floor(box.top/ACCURACY_LEVEL), Math.floor(box.left/ACCURACY_LEVEL)];
+      var endBox = [Math.floor(box.bottom/ACCURACY_LEVEL), Math.floor(box.right/ACCURACY_LEVEL)];
+
+      if (startBox[0] < 0) {
+        startBox[0] = 0;
+      }
+      if (startBox[1] < 0) {
+        startBox[1] = 0;
+      }
+      if (endBox[0] > virtualScreen.length) {
+        endBox[0] = virtualScreen.length - 1;
+      }
+      if (endBox[1] > virtualScreen[0].length) {
+        endBox[1] = virtualScreen[0].length - 1;
+      }
+      //update screen
+      for (var i = startBox[0]; i < endBox[0]; i++) {
+        for (var j = startBox[1]; j < endBox[1]; j++) {
+          virtualScreen[i][j] = true;
+        }
+      }
     });
+
+    var pixelCoverage = 0;
+    for (var i = 0; i < virtualScreen.length; i++) {
+      for (var j = 0; j < virtualScreen[0].length; j++) {
+        if (virtualScreen[i][j] === true) {
+          pixelCoverage += 1;
+        }
+      }
+    }
+
+    var totalPixels = virtualScreen.length * virtualScreen[0].length;
+    var percentCoverage = Math.floor(pixelCoverage * 100 / totalPixels);
+
+    console.log(percentCoverage + "% Visual Coverage");
+
+    //send through agent
+
   }
 
   refresh() {

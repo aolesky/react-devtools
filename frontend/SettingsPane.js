@@ -21,6 +21,7 @@ class SettingsPane extends React.Component {
         <BananaSlugFrontendControl {...this.props} />
         <ColorizerFrontendControl {...this.props} />
         <RegexFrontendControl {...this.props} />
+        {/*<PercentMetricFrontend {...this.props} />*/}
       </div>
     );
   }
